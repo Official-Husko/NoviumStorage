@@ -1,45 +1,87 @@
-require "/HLib/Classes/Class.lua"
-require "/HLib/Scripts/tableEx.lua"
-require "/HLib/Classes/Item/Item.lua"
-require "/HLib/Classes/Item/ItemWrapper.lua"
-require "/HLib/Classes/Other/MutexSecure.lua"
-require "/HLib/Classes/Filters/FilterGroup.lua"
-require "/HLib/Classes/Item/ItemsTable.lua"
-require "/scripts/util.lua"
+--[[
+  Drive.lua
+  ---------
+  This class represents a digital storage drive for Starbound, handling item storage, upgrades, filters, and change tracking.
+  Part of NoviumStorage (fork of DigitalStorage by X)
+
+  Starbound API cross-reference:
+    - sb.makeUuid(): Generates a unique identifier (see Starbound Lua API)
+    - os.clock(), os.time(): Standard Lua functions for time/entropy
+    - root.itemConfig(): Reads item configuration (see world.md/root.md)
+    - See also: ItemWrapper, ItemsTable, MutexSecure (mod libraries)
+]]
+
+require "/HLib/Classes/Class.lua"            -- Class system
+require "/HLib/Scripts/tableEx.lua"           -- Table utility extensions
+require "/HLib/Classes/Item/Item.lua"         -- Item class
+require "/HLib/Classes/Item/ItemWrapper.lua"  -- Item wrapper utilities
+require "/HLib/Classes/Other/MutexSecure.lua" -- Mutex/locking for concurrency
+require "/HLib/Classes/Filters/FilterGroup.lua" -- Filtering logic
+require "/HLib/Classes/Item/ItemsTable.lua"   -- Table for storing items
+require "/scripts/util.lua"                   -- Starbound utility functions
+
+-- Drive: Main class for managing a digital storage drive
 Drive = Class(MutexSecure);
 
+--[[
+  _init(item)
+  ------------
+  Constructor. Initializes the drive with the given item descriptor.
+  Sets up item storage, change tracking, and loads items from parameters.
+  Uses:
+    - UpdateDriveVersion: Ensures drive parameters are up-to-date.
+    - self:LoadItems(): Loads items from the drive's parameters.
+  @param item (table): The item descriptor for this drive (see Starbound item format)
+]]
 function Drive:_init(item)
   MutexSecure._init(self);
   self._drive = item;
-  self._driveStoredItems = ItemsTable();
-  self._driveChanges = {};
-  self._driveLastChanges = {};
-  self._driveItemsWorktable = ItemsTable();
-  self._driveItemsLoaded = false;
-  self._changes = {};
-  self._driveFilters = nil;
-  UpdateDriveVersion(self._drive);
-  self:LoadItems();
-
+  self._driveStoredItems = ItemsTable();      -- Persistent storage of items
+  self._driveChanges = {};                    -- Pending changes (add/remove)
+  self._driveLastChanges = {};                -- Last committed changes
+  self._driveItemsWorktable = ItemsTable();   -- Working table for item operations
+  self._driveItemsLoaded = false;             -- Whether items are loaded
+  self._changes = {};                        -- General change tracking
+  self._driveFilters = nil;                   -- FilterGroup for item filtering
+  UpdateDriveVersion(self._drive);            -- Ensure drive parameters are up-to-date
+  self:LoadItems();                           -- Load items from parameters
 end
 
+--[[
+  GetDrive()
+  ----------
+  Returns the underlying item descriptor for this drive.
+  @return (table): The item descriptor (see Starbound item format)
+]]
 function Drive:GetDrive()
   return self._drive;
 end
 
+--[[
+  LoadItems()
+  -----------
+  Loads items from the drive's parameters into storage and work tables.
+  Handles both flat and grouped data formats.
+  Updates the drive's Data parameter to a flattened format.
+  Uses:
+    - Item(): Constructs item objects from stored data.
+    - ItemsTable:Add(): Adds items to storage/work tables.
+    - next(): Standard Lua function for table iteration.
+]]
 function Drive:LoadItems()
   local firstindex, _ = next(self._drive.parameters.Data or {});
   if firstindex == nil then
+    -- No items to load
   elseif type(firstindex) == "number" then
+    -- Flat array of items
     for i, v in pairs(self._drive.parameters.Data) do
-
       self._driveStoredItems:Add(Item(v,true));
       self._driveItemsWorktable:Add(Item(v,true));
     end
   else
+    -- Grouped items (by type/group)
     for groupName, group in pairs(self._drive.parameters.Data) do
       for itemStoredIndex, itemStored in pairs(group) do
-
         self._driveStoredItems:Add(Item(itemStored,true));
         self._driveItemsWorktable:Add(Item(itemStored,true));
       end
@@ -49,6 +91,18 @@ function Drive:LoadItems()
   self._drive.parameters.Data = self._driveStoredItems:GetFlattened();
 end
 
+--[[
+  AddItem(item)
+  -------------
+  Attempts to add an item to the drive, respecting capacity and type limits.
+  Uses:
+    - ItemWrapper.GetItemCount: Gets item count (see ItemWrapper)
+    - ItemsTable:GetItemsCount/Types: Gets current usage
+    - ItemsTable:FindFlattened: Finds matching item slot
+    - ItemWrapper.CopyItem/SetItemCount: Clones and modifies item descriptors
+  @param item (table): The item to add
+  @return (table): The leftover item (if not all could be added)
+]]
 function Drive:AddItem(item)
   local itemsToAddTotal = ItemWrapper.GetItemCount(item);
   local freespace = self._drive.parameters.DriveParameters.Capacity - self._driveItemsWorktable:GetItemsCount();
@@ -78,6 +132,16 @@ function Drive:AddItem(item)
   return returnItem;
 end
 
+--[[
+  RemoveItem(item)
+  ----------------
+  Attempts to remove an item from the drive.
+  Uses:
+    - ItemWrapper.CopyItem/SetItemCount: Clones and modifies item descriptors
+    - ItemsTable:FindFlattened/Remove: Finds and removes item
+  @param item (table): The item to remove
+  @return (table): The removed item (with correct count), or zero-count if not found
+]]
 function Drive:RemoveItem(item)
   local result = ItemWrapper.CopyItem(item);
   ItemWrapper.SetItemCount(result,0)
@@ -94,14 +158,36 @@ function Drive:RemoveItem(item)
   return result;
 end
 
+--[[
+  LoadFilters()
+  -------------
+  Loads the drive's filter group from parameters.
+  Uses:
+    - FilterGroup: Constructs a filter group for item filtering.
+]]
 function Drive:LoadFilters()
   self._driveFilters = FilterGroup(self._drive.parameters.Filters or {});
 end
 
+--[[
+  FiltersAllow(item)
+  -----------------
+  Checks if the given item is allowed by the drive's filters.
+  Uses:
+    - FilterGroup:IsItemAllowed: Checks filter rules.
+  @param item (table): The item to check
+  @return (bool): True if allowed, false otherwise
+]]
 function Drive:FiltersAllow(item)
   return self._driveFilters:IsItemAllowed(item);
 end
 
+--[[
+  GetDriveData()
+  --------------
+  Returns a summary table of the drive's configuration and state.
+  @return (table): Table with filters, capacity, types, priority, items, and UUID
+]]
 function Drive:GetDriveData()
   local driveData = {};
   driveData.Filters = self._drive.parameters.Filters;
@@ -113,6 +199,13 @@ function Drive:GetDriveData()
   return driveData;
 end
 
+--[[
+  SaveChanges()
+  -------------
+  Commits all pending changes to the drive's stored items and updates parameters.
+  Updates item counts, types, and description for UI.
+  Increments SaveId for versioning.
+]]
 function Drive:SaveChanges()
   for i=1,#self._driveChanges do
     if self._driveChanges[i].Mode == 1 then
@@ -134,6 +227,11 @@ function Drive:SaveChanges()
   self._driveChanges = {};
 end
 
+--[[
+  CancelChanges()
+  ---------------
+  Rolls back all pending changes, restoring the worktable to the previous state.
+]]
 function Drive:CancelChanges()
   for i=1,#self._driveChanges do
     if self._driveChanges[i].Mode == 1 then
@@ -145,17 +243,47 @@ function Drive:CancelChanges()
   self._driveChanges = {};
 end
 
+--[[
+  GetCurrentChanges()
+  -------------------
+  Returns the list of currently pending changes (not yet saved).
+  @return (table): List of change tables {Mode, Item}
+]]
 function Drive:GetCurrentChanges()
   return self._driveChanges;
 end
+
+--[[
+  GetLastChanges()
+  ----------------
+  Returns the list of changes from the last save operation.
+  @return (table): List of change tables {Mode, Item}
+]]
 function Drive:GetLastChanges()
   return self._driveLastChanges;
 end
 
+--[[
+  GetDriveUuid()
+  --------------
+  Returns the unique identifier for this drive.
+  Uses:
+    - sb.makeUuid(): Starbound API for UUIDs
+  @return (string): The drive's UUID
+]]
 function Drive:GetDriveUuid()
   return self._drive.parameters.DriveUuid;
 end
 
+--[[
+  UpdateDriveStatsByVal(driveParams, stat, times, value)
+  -----------------------------------------------------
+  Helper function to increment a drive stat by a value, multiple times.
+  @param driveParams (table): Drive parameters
+  @param stat (string): Stat name ("Capacity" or "Types")
+  @param times (number): How many times to increment
+  @param value (number): Value to add each time
+]]
 local function UpdateDriveStatsByVal(driveParams, stat, times, value)
   if times ~= 0 then
     for i = 1, times do
@@ -164,6 +292,15 @@ local function UpdateDriveStatsByVal(driveParams, stat, times, value)
   end
 end
 
+--[[
+  RecalculateDriveSize(drive)
+  --------------------------
+  Recalculates the drive's capacity and type limits based on upgrades and base stats.
+  Uses:
+    - root.itemConfig: Reads item config (see world.md/root.md)
+  @param drive (table): The drive item descriptor
+  @return (table): The updated drive descriptor
+]]
 function RecalculateDriveSize(drive)
   local driveParams = drive.parameters.DriveParameters;
   if not driveParams.BaseStats then
@@ -196,6 +333,18 @@ function RecalculateDriveSize(drive)
   return drive;
 end
 
+--[[
+  UpdateDriveVersion(drive)
+  ------------------------
+  Ensures the drive's parameters are up-to-date and formatted for the current version.
+  Handles migration from older versions and initializes missing fields.
+  Uses:
+    - sb.makeUuid(): For unique IDs (see Starbound API)
+    - os.clock(), os.time(): For entropy
+    - RecalculateDriveSize: For stat recalculation
+  @param drive (table): The drive item descriptor
+  @return (table): The updated drive descriptor
+]]
 function UpdateDriveVersion(drive)
   local driveVersion = drive.parameters.Version or 0;
   if driveVersion < 1 then
