@@ -1,0 +1,13 @@
+{
+    "input": [
+            { "item": "ironbar", "count": 10 },
+            { "item": "tungstenbar", "count": 5 },
+            { "item": "titaniumbar", "count": 3 },
+        { "item": "money", "count": 500 }
+    ],
+  "output" : {
+    "item" : "digitalstorage_driveupgrader",
+    "count" : 1
+  },
+  "groups" : ["inventorstable", "craftingstations", "all"]
+}

@@ -1,0 +1,41 @@
+{
+  "objectName": "digitalstorage_filterformatter",
+  "colonyTags": [ "storage" ],
+  "printable": false,
+  "rarity": "Rare",
+  "objectType": "container",
+  "tooltipKind": "container",
+
+  "category": "digitalstorage",
+  "price": 150,
+  "description": "Machine that allows you to store filters on special cards.",
+  "shortdescription": "Filter Formatter",
+  "race": "generic",
+  "health": 4,
+
+  "inventoryIcon": "digitalstorage_filterformatterIcon.png",
+  "orientations": [
+    {
+      "dualImage" : "/Objects/FilterFormatter/digitalstorage_filterformatter.png:<color>",
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+      "spaceScan": 0.1,
+      "anchors" : ["bottom"]
+    }
+  ],
+
+  "scripts": [
+    "digitalstorage_filterformatter.lua"
+  ],
+
+  "scriptDelta": 0,
+  "slotCount": 0,
+  "uiConfig": "/Objects/FilterFormatter/digitalstorage_filterformatter.config",
+  "frameCooldown": 5,
+  "autoCloseCooldown": 3600,
+  "inputNodes": [ [ 0, 0 ] ],
+  "learnBlueprintsOnPickup" : [
+    "digitalstorage_basiccard",
+    "digitalstorage_filtercard"
+  ]
+}

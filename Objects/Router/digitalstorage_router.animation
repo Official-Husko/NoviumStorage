@@ -1,0 +1,45 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstorage_routerState" : {
+        "default" : "off",
+        "states" : {
+          "on" : 
+          {
+            "frames" : 18,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "off" : 
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "digitalstorage_router" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "digitalstorage_routerState" : {
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

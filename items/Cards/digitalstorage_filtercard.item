@@ -1,0 +1,9 @@
+{
+  "itemName" : "digitalstorage_filtercard",
+  "shortdescription" : "Filter Card",
+  "description" : "Card designed to store filters.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_filtercard.png",
+  "rarity" : "common",
+  "maxStack" : 1000
+}

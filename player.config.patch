@@ -1,0 +1,6 @@
+[
+    { "op": "add", "path": "/defaultBlueprints/tier1/-", "value": { "item" : "digitalstorage_controller"  } },
+    { "op": "add", "path": "/defaultBlueprints/tier1/-", "value": { "item" : "digitalstorage_serverrack"  } },
+    { "op": "add", "path": "/defaultBlueprints/tier1/-", "value": { "item" : "digitalstorage_terminal"  } },
+    { "op": "add", "path": "/defaultBlueprints/tier1/-", "value": { "item" : "digitalstorage_router"  } }
+]

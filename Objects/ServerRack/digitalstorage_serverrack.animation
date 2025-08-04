@@ -1,0 +1,55 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "AnimationState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "on" :
+          {
+            "frames" : 20,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "failure" :
+          {
+            "frames" : 4,
+            "cycle" : 1,
+            "mode" : "loop"
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "fullObjectAnimation" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "AnimationState" : {
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            },
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+            "failure" : {
+              "properties" : {
+                "image" : "<partImage>:failure.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

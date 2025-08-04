@@ -1,0 +1,9 @@
+{
+  "itemName" : "digitalstorage_basiccard",
+  "shortdescription" : "Empty Card",
+  "description" : "Card with nothing on it.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_basiccard.png",
+  "rarity" : "common",
+  "maxStack" : 1000
+}

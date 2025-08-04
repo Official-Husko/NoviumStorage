@@ -1,0 +1,33 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstorage_rackState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "digitalstorage_rack" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "digitalstorage_rackState" : {
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "itemName" : "digitalstorage_datadrive_32k",
+  "shortdescription" : "Holographic Drive (32K)",
+  "description" : "Stores items.",
+  "category" : "container",
+  "inventoryIcon" : "digitalstorage_datadrive_32k.png",
+  "rarity" : "uncommon",
+  "maxStack" : 1,
+  "DenseItemStorageComponent" : true,
+  "digitalstorage_drivedata" : {
+    "description" : "Stores items.",
+    "capacity" : 32768,
+    "types" : 64
+  }
+}

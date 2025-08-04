@@ -1,0 +1,13 @@
+{
+    "input": [
+            { "item": "siliconboard", "count": 5 },
+            { "item": "tungstenbar", "count": 3 },
+        { "item": "wire", "count": 20 },
+        { "item" : "titaniumbar", "count" : 7 }
+    ],
+  "output" : {
+    "item" : "digitalstorage_digitalstacker",
+    "count" : 1
+  },
+  "groups" : ["inventorstable", "craftingstations", "all"]
+}

@@ -1,0 +1,55 @@
+{
+  "objectName": "digitalstorage_serverrack",
+  "colonyTags": [ "storage" ],
+  "printable": false,
+  "rarity": "Rare",
+"objectType": "container",
+
+
+  "category": "digitalstorage",
+  "price": 150,
+  "description": "Large box with places to put Holographic Drives in.",
+  "shortdescription": "Server Rack",
+  "race": "generic",
+  "health": 4,
+
+  "inventoryIcon": "digitalstorage_serverrackIcon.png",
+
+  "animation" : "digitalstorage_serverrack.animation",
+  "animationParts" : {
+    "fullObjectAnimation" : "/Objects/ServerRack/digitalstorage_serverrack.png"
+  },
+
+  "animationPosition" : [0, 0],
+
+  "orientations": [
+    {
+      "dualImage" : "/Objects/ServerRack/digitalstorage_serverrack.png:<color>.<frame>",
+      "image": "/Objects/ServerRack/digitalstorage_serverrack.png:<color>.<frame>",
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+      "collision" : "platform",
+      "spaceScan": 0.1,
+      "anchors" : ["bottom"]
+    }
+  ],
+
+
+  "scripts": [
+    "digitalstorage_serverrack.lua"
+  ],
+  "DigitalStorageNetworkPart" : {
+    "NetworkStorage" : true,
+    "NetworkStorageDigital" : true
+  },
+  "keepAlive" : true,
+  "scriptDelta": 0,
+  "slotCount": 4,
+  "uiConfig": "/Objects/ServerRack/digitalstorage_serverrack.config",
+  "frameCooldown": 5,
+  "autoCloseCooldown": 3600,
+  "inputNodes": [ [ 1, 3 ] ],
+  "learnBlueprintsOnPickup" : [
+    "digitalstorage_datadrive"
+  ]
+}

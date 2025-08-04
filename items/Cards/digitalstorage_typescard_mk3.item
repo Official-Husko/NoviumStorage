@@ -1,0 +1,13 @@
+{
+  "itemName" : "digitalstorage_typescard_mk3",
+  "shortdescription" : "Types Upgrade Card Mk 3",
+  "description" : "Card that increases drive max types.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_typescard_mk3.png",
+  "rarity" : "common",
+  "maxStack" : 1000,
+  "DriveUpgradeCard" : {
+    "Type" : "types",
+    "Tier" : 3
+  }
+}

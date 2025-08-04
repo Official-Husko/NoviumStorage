@@ -1,0 +1,20 @@
+{
+  "frameGrid" : {
+    "size" : [8, 16],
+    "dimensions" : [4, 4],
+    "names" : [
+      ["off.1", null, null, null],
+      ["oninac.1", "oninac.2", "oninac.3", "oninac.4"],
+      ["onact.1", "onact.2", "onact.3", "onact.4"],
+      ["errored.1", null, null, null]
+
+    ]
+  },
+  "aliases" : {
+  "default.default" : "off.1",
+    "oninac.default" : "oninac.1",
+    "onact.default" : "onact.1",
+    "off.default" : "off.1",
+    "errored.default" : "errored.1"
+  }
+}

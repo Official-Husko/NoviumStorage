@@ -1,0 +1,15 @@
+{
+  "itemName" : "digitalstorage_datadrive_512k",
+  "shortdescription" : "Holographic Drive (512K)",
+  "description" : "Stores items.",
+  "category" : "container",
+  "inventoryIcon" : "digitalstorage_datadrive_512k.png",
+  "rarity" : "uncommon",
+  "maxStack" : 1,
+  "DenseItemStorageComponent" : true,
+  "digitalstorage_drivedata" : {
+    "description" : "Stores items.",
+    "capacity" : 524288,
+    "types" : 128
+  }
+}

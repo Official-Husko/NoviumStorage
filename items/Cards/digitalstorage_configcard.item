@@ -1,0 +1,9 @@
+{
+  "itemName" : "digitalstorage_configcard",
+  "shortdescription" : "Config Card",
+  "description" : "Card with built in memory to store configuration.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_configcard.png",
+  "rarity" : "common",
+  "maxStack" : 1000
+}

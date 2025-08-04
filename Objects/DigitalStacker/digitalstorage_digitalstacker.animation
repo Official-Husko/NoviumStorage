@@ -1,0 +1,51 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstackerState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "on" :
+          {
+            "frames" : 5,
+            "cycle" : 0.5,
+            "mode" : "loop"
+          },
+          "failure" :
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+    "parts" : {
+      "digitalstorage_digitalstacker" : {
+        "properties" : {
+          "centered" : false
+        },
+        "partStates" : {
+          "digitalstackerState" : {
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            },
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+            "failure" : {
+              "properties" : {
+                "image" : "<partImage>:failure.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

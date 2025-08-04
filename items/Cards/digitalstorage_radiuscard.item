@@ -1,0 +1,9 @@
+{
+  "itemName" : "digitalstorage_radiuscard",
+  "shortdescription" : "Radius Card",
+  "description" : "Card that increases machine radius.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_radiuscard.png",
+  "rarity" : "common",
+  "maxStack" : 1000
+}

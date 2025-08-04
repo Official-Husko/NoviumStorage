@@ -1,0 +1,12 @@
+{
+  "input": [
+    { "item": "tungstenbar", "count": 3 },
+    { "item": "wire", "count": 25 },
+    { "item": "money", "count": 500 }
+  ],
+  "output" : {
+    "item" : "digitalstorage_serverrack",
+    "count" : 1
+  },
+  "groups" : ["inventorstable", "craftingstations", "all"]
+}

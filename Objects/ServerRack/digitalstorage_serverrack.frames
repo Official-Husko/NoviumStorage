@@ -1,0 +1,17 @@
+{
+  "frameGrid" : {
+    "size" : [32, 32],
+    "dimensions" : [20, 3],
+    "names" : [
+      ["off.1"],
+      ["on.1","on.2","on.3","on.4","on.5","on.6","on.7","on.8","on.9","on.10","on.11","on.12","on.13","on.14","on.15","on.16","on.17","on.18","on.19","on.20"],
+      ["failure.1", "failure.2", "failure.3", "failure.4"]
+    ]
+  },
+  "aliases" : {
+    "default.default" : "off.1",
+    "off.default" : "off.1",
+    "on.default" : "on.1",
+    "failure.default" : "failure.1"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "itemName" : "digitalstorage_genericdatadrive",
+  "shortdescription" : "Generic Holographic Drive",
+  "description" : "Stores insane amount of items.",
+  "category" : "container",
+  "inventoryIcon" : "digitalstorage_genericdatadrive.png",
+  "rarity" : "uncommon",
+  "maxStack" : 1,
+  "DenseItemStorageComponent" : true,
+  "digitalstorage_drivedata" : {
+    "description" : "Stores insane amount of items.",
+    "capacity" : 536870912,
+    "types" : 256
+  }
+}

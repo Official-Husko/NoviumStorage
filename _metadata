@@ -1,0 +1,10 @@
+{
+  "version" : "0.9",
+  "author" : "Hiran",
+  "requires" : ["HLib"],
+  "description" : "This mod was designed for people who are not interested in game's default storage. \nEverything is crafted (for now) in Architects Table.\n\nKnown Bugs:\nEverything known should be fixed in latest version.\nKnown Issues:\nDue to large mod upgrade old server racks had to be deprecated. You can recraft them in 2 new Server Racks.\n\nFuture plans:\nCode cleanup :P\nAutomatic crafting.\n...(machines suggested by users, and please think hard, because i made sure that this mod could be easily extended)",
+  "name" : "DigitalStorage",
+  "friendlyName" : "DigitalStorage",
+  "steamContentId" : "946227505",
+  "link" : "steam://url/CommunityFilePage/946227505"
+}

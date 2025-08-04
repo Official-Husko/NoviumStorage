@@ -1,0 +1,14 @@
+ {
+   "input" : [
+        { "item" : "stickofram", "count" : 2 },
+        { "item" : "titaniumbar", "count" : 6 },
+        { "item" : "durasteelbar", "count" : 2 },
+        { "item": "diamond", "count": 1 }
+      ],
+  "output" : {
+    "item" : "digitalstorage_datadrive",
+    "count" : 1
+  },
+  "duration" : 3,
+  "groups" : [ "inventorstable", "craftingstations", "all" ]
+}

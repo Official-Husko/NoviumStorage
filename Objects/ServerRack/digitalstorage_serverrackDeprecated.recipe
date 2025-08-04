@@ -1,0 +1,10 @@
+{
+  "input": [
+    { "item": "digitalstorage_rack", "count": 1 }
+  ],
+  "output" : {
+    "item" : "digitalstorage_serverrack",
+    "count" : 2
+  },
+  "groups" : ["plain", "all"]
+}

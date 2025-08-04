@@ -1,0 +1,35 @@
+{
+  "objectName" : "digitalstorage_digitalstacker",
+  "colonyTags" : ["storage"],
+  "rarity" : "Uncommon",
+  "description" : "Device that averges spoil time for food items in network.",
+  "shortdescription" : "Digital Stacker",
+  "race" : "ancient",
+  "category" : "digitalstorage",
+  "price" : 2000,
+  "animation" : "digitalstorage_digitalstacker.animation",
+  "animationParts" : {
+    "digitalstorage_digitalstacker" : "/Objects/DigitalStacker/digitalstorage_digitalstacker.png"
+  },
+
+  "animationPosition" : [0, 0],
+  "inventoryIcon" : "digitalstorage_digitalstackerIcon.png",
+  "orientations": [
+      {
+        "dualImage" : "/Objects/DigitalStacker/digitalstorage_digitalstacker.png:<color>.<frame>",
+        "imagePosition" : [0, 0],
+        "spaceScan": 0.1,
+        "anchors" : ["bottom"]
+      }
+    ],
+    "DigitalStorageNetworkPart" : {
+      "EndInterface" : true
+    },
+
+    "scripts": [
+      "digitalstorage_digitalstacker.lua"
+    ],
+
+    "scriptDelta": 60,
+    "inputNodes" : [ [ 0, 2 ] ]
+}

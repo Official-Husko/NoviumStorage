@@ -1,0 +1,9 @@
+{
+  "itemName" : "digitalstorage_speedcard",
+  "shortdescription" : "Speed Card",
+  "description" : "Card that accelerates other stuff.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_speedcard.png",
+  "rarity" : "common",
+  "maxStack" : 1000
+}

@@ -1,0 +1,18 @@
+{
+  "frameGrid" : {
+    "size" : [8, 8],
+    "dimensions" : [4, 3],
+    "names" : [
+      ["off.1", null, null, null],
+      ["on.1", "on.2", "on.3", "on.4"],
+      ["onconnected.1", "onconnected.2", "onconnected.3", "onconnected.4"]
+
+    ]
+  },
+  "aliases" : {
+  "default.default" : "off.1",
+    "on.default" : "on.1",
+    "onconnected.default" : "onconnected.1",
+    "off.default" : "off.1"
+  }
+}

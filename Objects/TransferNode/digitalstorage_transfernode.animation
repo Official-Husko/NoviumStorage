@@ -1,0 +1,56 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstorage_transfernodeState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "on" :
+          {
+            "frames" : 6,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "idle" :
+          {
+            "frames" : 6,
+            "cycle" : 1,
+            "mode" : "loop"
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "digitalstorage_transfernode" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "digitalstorage_transfernodeState" : {
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            },
+            "idle" : {
+              "properties" : {
+                "image" : "<partImage>:idle.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

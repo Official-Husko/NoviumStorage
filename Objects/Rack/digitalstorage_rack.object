@@ -1,0 +1,57 @@
+{
+    "objectName": "digitalstorage_rack",
+    "colonyTags": [ "storage" ],
+    "printable": false,
+    "rarity": "Rare",
+    "objectType": "container",
+    "tooltipKind": "container",
+
+    "category": "digitalstorage",
+    "price": 150,
+    "description": "This object is deprecated, please use new Server Rack",
+    "shortdescription": "DEPRECATED",
+    "race": "generic",
+    "health": 4,
+
+    "inventoryIcon": "digitalstorage_rackIcon.png",
+
+    "animation" : "digitalstorage_rack.animation",
+    "animationParts" : {
+        "digitalstorage_rack" : "/Objects/Rack/digitalstorage_rack.png"
+    },
+
+    "animationPosition" : [0, 0],
+
+    "orientations": [
+        {
+            "image": "/Objects/Rack/digitalstorage_rack.png:<color>.<frame>",
+            "imagePosition" : [0, 0],
+            "direction" : "right",
+            "frames" : 1,
+
+            "spaceScan": 0.1,
+            "anchors" : ["bottom"]
+        }
+    ],
+
+
+    "scripts": [
+        "digitalstorage_rack.lua"
+    ],
+    "DigitalStorageNetworkPart" : {
+        "NetworkStorageProvider" : true
+    },
+    "keepAlive" : true,
+    "scriptDelta": 0,
+    "slotCount": 20,
+    "uiConfig": "/Objects/Rack/digitalstorage_rack.config",
+    "frameCooldown": 5,
+    "autoCloseCooldown": 3600,
+    "inputNodes": [ [ 1, 3 ] ],
+
+    "learnBlueprintsOnPickup" : [
+        "digitalstorage_datadrive",
+        "digitalstorage_serverrack"
+
+    ]
+}

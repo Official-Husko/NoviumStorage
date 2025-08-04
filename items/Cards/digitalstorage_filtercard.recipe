@@ -1,0 +1,14 @@
+{
+  "input" : [
+    { "item" : "tungstenbar", "count" : 4 },
+    { "item" : "ironbar", "count" : 5 },
+    { "item" : "titaniumbar", "count" : 1 },
+    { "item" : "digitalstorage_basiccard", "count" : 1 }
+  ],
+  "output" : {
+    "item" : "digitalstorage_filtercard",
+    "count" : 1
+  },
+  "duration" : 0.75,
+  "groups" : [ "inventorstable", "craftingstations", "all" ]
+}

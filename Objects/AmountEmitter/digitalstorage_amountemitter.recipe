@@ -1,0 +1,13 @@
+{
+    "input": [
+        { "item": "siliconboard", "count": 1 },
+            { "item": "tungstenbar", "count": 2 },
+        { "item": "wire", "count": 5 },
+        { "item": "glass", "count": 10 }
+    ],
+  "output" : {
+    "item" : "digitalstorage_amountemitter",
+    "count" : 1
+  },
+  "groups" : ["inventorstable", "craftingstations", "all"]
+}

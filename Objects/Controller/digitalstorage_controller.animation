@@ -1,0 +1,63 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstorage_controllerState" : {
+        "default" : "working",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "idle" :
+          {
+            "frames" : 1
+          },
+          "working" :
+          {
+            "frames" : 8,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "failure" :
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "digitalstorage_controller" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "digitalstorage_controllerState" : {
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            },
+
+            "idle" : {
+              "properties" : {
+                "image" : "<partImage>:idle.<frame>"
+              }
+            },
+            "working" : {
+              "properties" : {
+                "image" : "<partImage>:working.<frame>"
+              }
+            },
+            "failure" : {
+              "properties" : {
+                "image" : "<partImage>:failure.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

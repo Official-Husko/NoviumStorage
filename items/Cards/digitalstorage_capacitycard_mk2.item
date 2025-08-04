@@ -1,0 +1,17 @@
+{
+  "itemName" : "digitalstorage_capacitycard_mk2",
+  "shortdescription" : "Capacity Upgrade Card Mk 2",
+  "description" : "Card that increases drive capacity.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_capacitycard_mk2.png",
+  "rarity" : "common",
+  "maxStack" : 1000,
+  "learnBlueprintsOnPickup" : [
+
+    "digitalstorage_capacitycard_mk3"
+  ],
+  "DriveUpgradeCard" : {
+    "Type" : "capacity",
+    "Tier" : 2
+  }
+}

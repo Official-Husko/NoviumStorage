@@ -1,0 +1,54 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "AnimationState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "on" :
+          {
+            "frames" : 4,
+            "cycle" : 0.2,
+            "mode" : "loop"
+          },
+          "onconnected" :
+          {
+            "frames" : 4,
+            "cycle" : 0.2,
+            "mode" : "loop"
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "Animation" : {
+        "properties" : {
+          "centered" : false
+        },
+        "partStates" : {
+          "AnimationState" : {
+            "onconnected" : {
+              "properties" : {
+                "image" : "<partImage>:onconnected.<frame>"
+              }
+            },
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

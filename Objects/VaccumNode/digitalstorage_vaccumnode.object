@@ -1,0 +1,52 @@
+{
+  "objectName": "digitalstorage_vaccumnode",
+  "colonyTags": [ "storage" ],
+  "printable": false,
+  "rarity": "Rare",
+  "objectType": "container",
+  "tooltipKind": "container",
+
+  "category": "digitalstorage",
+  "price": 150,
+  "description": "This device pulls any item nearby into its inventory.",
+  "shortdescription": "Vaccum Node",
+  "race": "generic",
+  "health": 4,
+
+  "inventoryIcon": "digitalstorage_vaccumnodeIcon.png",
+  "animation" : "digitalstorage_vaccumnode.animation",
+  "animationParts" : {
+    "Animation" : "/Objects/VaccumNode/digitalstorage_vaccumnode.png"
+  },
+  "orientations": [
+    {
+      "image": "/Objects/VaccumNode/digitalstorage_vaccumnode.png:<color>.<frame>",
+      "imagePosition" : [0, 0],
+      "direction" : "right",
+      "frames" : 1,
+
+      "spaceScan": 0.1,
+      "anchors" : [ "background" ]
+    }
+  ],
+
+  "scripts": [
+    "digitalstorage_vaccumnode.lua"
+  ],
+
+  "DigitalStorageNetworkPart" : {
+    "EndDevice" : true,
+    "Node" : true,
+    "LoadRegion" : [-5,-10,5,5]
+  },
+  "keepAlive" : true,
+  "scriptDelta": 0,
+  "slotCount": 16,
+  "uiConfig": "/Objects/VaccumNode/digitalstorage_vaccumnode.config",
+  "frameCooldown": 5,
+  "autoCloseCooldown": 3600,
+  "inputNodes": [ [ 0, 0 ] ],
+  "learnBlueprintsOnPickup" : [
+    "digitalstorage_radiuscard"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "digitalstorage_terminalState" : {
+        "default" : "off",
+        "states" : {
+          "on" : 
+          {
+            "frames" : 5,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "off" : 
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "digitalstorage_terminal" : {
+        "properties" : {
+          "centered" : false
+        },
+
+        "partStates" : {
+          "digitalstorage_terminalState" : {
+            "on" : {
+              "properties" : {
+                "image" : "<partImage>:on.<frame>"
+              }
+            },
+
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

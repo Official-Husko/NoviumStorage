@@ -1,0 +1,63 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "AnimationState" : {
+        "default" : "off",
+        "states" : {
+          "off" :
+          {
+            "frames" : 1
+          },
+          "oninac" :
+          {
+            "frames" : 4,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "onact" :
+          {
+            "frames" : 4,
+            "cycle" : 1,
+            "mode" : "loop"
+          },
+          "errored" :
+          {
+            "frames" : 1
+          }
+        }
+      }
+    },
+
+    "parts" : {
+      "Animation" : {
+        "properties" : {
+          "centered" : false
+        },
+        "partStates" : {
+          "AnimationState" : {
+            "oninac" : {
+              "properties" : {
+                "image" : "<partImage>:oninac.<frame>"
+              }
+            },
+            "onact" : {
+              "properties" : {
+                "image" : "<partImage>:onact.<frame>"
+              }
+            },
+            "off" : {
+              "properties" : {
+                "image" : "<partImage>:off.<frame>"
+              }
+            },
+            "errored" : {
+              "properties" : {
+                "image" : "<partImage>:errored.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

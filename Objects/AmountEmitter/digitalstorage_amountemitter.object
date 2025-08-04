@@ -1,0 +1,51 @@
+{
+  "objectName": "digitalstorage_amountemitter",
+  "colonyTags": [ "storage" ],
+  "printable": false,
+  "rarity": "Rare",
+  "objectType": "container",
+  "tooltipKind": "container",
+
+  "category": "digitalstorage",
+  "price": 150,
+  "description": "Sends signal when item amount is below/above certain amount.",
+  "shortdescription": "Amount Emitter",
+  "race": "generic",
+  "health": 4,
+
+  "inventoryIcon": "digitalstorage_amountemitterIcon.png",
+  "animation" : "digitalstorage_amountemitter.animation",
+  "animationParts" : {
+    "Animation" : "/Objects/AmountEmitter/digitalstorage_amountemitter.png"
+  },
+  "orientations": [
+    {
+      "dualImage" : "/Objects/AmountEmitter/digitalstorage_amountemitter.png:<color>.<frame>",
+      "image": "/Objects/AmountEmitter/digitalstorage_amountemitter.png:<color>.<frame>",
+      "imagePosition" : [0, 0],
+
+      "frames" : 1,
+
+      "spaceScan": 0.1,
+      "anchors" : [ "background" ]
+    }
+  ],
+
+  "scripts": [
+    "digitalstorage_amountemitter.lua"
+  ],
+
+  "DigitalStorageNetworkPart" : {
+    "EndDevice" : true
+  },
+  "keepAlive" : true,
+  "scriptDelta": 0,
+  "slotCount": 0,
+  "uiConfig": "/Objects/AmountEmitter/digitalstorage_amountemitter.config",
+  "frameCooldown": 5,
+  "autoCloseCooldown": 3600,
+  "inputNodes": [ [ 0, 0 ] ],
+  "outputNodes": [ [ 0, 1 ] ],
+  "learnBlueprintsOnPickup" : [
+  ]
+}

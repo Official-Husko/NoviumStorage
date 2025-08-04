@@ -1,0 +1,17 @@
+{
+  "frameGrid" : {
+    "size" : [32, 32],
+    "dimensions" : [5, 3],
+    "names" : [
+      ["off.1", null, null, null, null],
+     ["on.1", "on.2", "on.3", "on.4", "on.5"],
+      ["failure.1", null, null, null, null]
+    ]
+  },
+  "aliases" : {
+    "default.default" : "off.1",
+    "off.default" : "off.1",
+  "on.default" : "on.1",
+  "failure.default" : "failure.1"
+  }
+}

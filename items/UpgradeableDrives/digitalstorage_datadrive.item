@@ -1,0 +1,20 @@
+{
+  "itemName" : "digitalstorage_datadrive",
+  "shortdescription" : "Holographic Drive",
+  "description" : "Stores items.",
+  "category": "digitalstorage",
+  "inventoryIcon" : "digitalstorage_datadrive.png",
+  "rarity" : "uncommon",
+  "maxStack" : 1,
+  "DenseItemStorageComponent" : true,
+  "DigitalStorage_UpgradeableDrive" : true,
+  "digitalstorage_drivedata" : {
+    "description" : "Stores items.",
+    "capacity" : 8192,
+    "types" : 64
+  },
+  "learnBlueprintsOnPickup" : [
+    "digitalstorage_driveupgrader",
+    "digitalstorage_filterformatter"
+  ]
+}

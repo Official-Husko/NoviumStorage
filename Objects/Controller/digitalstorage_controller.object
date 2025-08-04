@@ -1,0 +1,50 @@
+{
+  "objectName": "digitalstorage_controller",
+  "colonyTags": [ "storage" ],
+  "printable": false,
+  "rarity": "Rare",
+
+  "category": "digitalstorage",
+  "price": 150,
+  "description": "Large box of processors that do matter-data conversions.",
+  "shortdescription": "Digital Controller",
+  "race": "generic",
+  "health": 4,
+
+  "inventoryIcon": "digitalstorage_controllerIcon.png",
+
+  "animation" : "digitalstorage_controller.animation",
+  "animationParts" : {
+    "digitalstorage_controller" : "/Objects/Controller/digitalstorage_controller.png"
+  },
+  "DigitalStorageNetworkPart" : {
+    "Controller" : true
+  },
+  "keepAlive" : true,
+  "animationPosition" : [0, 0],
+
+  "orientations": [
+    {
+      "dualImage" : "/Objects/Controller/digitalstorage_controller.png:<color>.<frame>",
+      "image": "/Objects/Controller/digitalstorage_controller.png:<color>.<frame>",
+      "imagePosition" : [0, 0],
+      "direction" : "right",
+      "frames" : 1,
+
+      "spaceScan": 0.1,
+      "anchors" : ["bottom"]
+    }
+  ],
+
+
+  "scripts": [
+    "digitalstorage_controller.lua",
+    "digitalstorage_networkCore.lua"
+  ],
+
+  "scriptDelta": 0,
+  "outputNodes" : [ [ 1, 3 ] ],
+  "learnBlueprintsOnPickup" : [
+    "digitalstorage_digitalstacker"
+  ]
+}
