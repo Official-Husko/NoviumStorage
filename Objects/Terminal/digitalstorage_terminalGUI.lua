@@ -59,11 +59,13 @@ local function ProcessData(items,patterns)
   end
 end
 
-local function ProcessNetworkItemsPatterns(items,patterns)
+local function ProcessNetworkItemsPatterns(items,patterns,flatItems)
 
   ProcessData(items,patterns);
-  local flatData = copy(self._networkItems:GetFlattened());
-  table.sort(flatData,SortByName);
+  local flatData = flatItems or copy(self._networkItems:GetFlattened());
+  if not flatItems then
+    table.sort(flatData,SortByName);
+  end
   for i=1,#flatData do
     self._networkList:AddListItem(flatData[i]);
     if self._limiter:Check() then
@@ -226,7 +228,7 @@ local function GetResponses()
         self._ProcessNetworkItemsPatternsQueued = true;
         addedInitTable = true;
         self._remoteSaveId = response.Data.SaveId or 0;
-        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItemsPatterns), response.Data.Items or {}, response.Data.Patterns or {}));
+        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItemsPatterns), response.Data.Items or {}, response.Data.Patterns or {}, response.Data.FlatItems));
       elseif response.Task == "LoadNetworkDelta" then
         local incomingSaveId = response.Data.SaveId or 0;
         if incomingSaveId == 0 or incomingSaveId > self._remoteSaveId then

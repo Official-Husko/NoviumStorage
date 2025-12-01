@@ -28,9 +28,35 @@ local function ApplyPendingDeltas()
   self._pendingDeltas = {};
 end
 
+local function RebuildLocalCaches()
+  if not self._cachedItems then
+    return;
+  end
+  self._cachedIndexed = self._cachedItems:GetIndexed();
+  local flat = self._cachedItems:GetFlattened();
+  table.sort(flat, function(a,b) return (a.DisplayNameLower or string.lower(a.DisplayName)) < (b.DisplayNameLower or string.lower(b.DisplayName)); end);
+  self._cachedFlat = flat;
+end
+
+local function QueueLocalCacheRebuild()
+  if self._cacheRebuildScheduled then
+    return;
+  end
+  self._cacheRebuildScheduled = true;
+  self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(function ()
+    RebuildLocalCaches();
+    self._cacheRebuildScheduled = false;
+  end)));
+end
+
 local function BuildCache()
   local state = DigitalNetworkObtainNetworkState(self._cacheSaveId);
   if not state then
+    return;
+  end
+  if state.Pending then
+    self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(BuildCache)), nil, "BuildCacheRetry");
+    script.setUpdateDelta(1);
     return;
   end
 
@@ -46,6 +72,8 @@ local function BuildCache()
       end
     end
     self._cachedPatterns = state.Patterns or {};
+    self._cachedIndexed = state.Items;
+    self._cachedFlat = state.FlatItems;
   end
 
   if state.Changes then
@@ -57,6 +85,9 @@ local function BuildCache()
   self._cacheSaveId = state.SaveId or self._cacheSaveId;
   self._cacheBuilt = true;
   ApplyPendingDeltas();
+  if not self._cachedFlat or not self._cachedIndexed then
+    QueueLocalCacheRebuild();
+  end
 end
 
 local function GetNetworkData()
@@ -67,7 +98,8 @@ local function GetNetworkData()
   end
 
   if DigitalNetworkHasOneController() then
-    data.Items = self._cachedItems:GetIndexed() or {};
+    data.Items = self._cachedIndexed or (self._cachedItems and self._cachedItems:GetIndexed()) or {};
+    data.FlatItems = self._cachedFlat;
     data.Patterns = self._cachedPatterns;
     data.SaveId = self._cacheSaveId;
     data.Cached = true;
@@ -116,6 +148,9 @@ function DigitalNetworkItemsListener(item,type,saveId)
   else
     self._cachedItems:Add(ItemWrapper.CopyItem(item));
     self._cacheSaveId = deltaSaveId;
+    self._cachedIndexed = nil;
+    self._cachedFlat = nil;
+    QueueLocalCacheRebuild();
   end
   if self._interactingPlayer then
     self._responses[#self._responses + 1] = {Task = "UpdateItemCount"; Data = item,Type = type, SaveId = deltaSaveId};
@@ -154,6 +189,9 @@ function init()
   self._cachedPatterns = {};
   self._pendingDeltas = {};
   self._cacheSaveId = storage._cacheSaveId or 0;
+  self._cachedIndexed = nil;
+  self._cachedFlat = nil;
+  self._cacheRebuildScheduled = false;
   self._listenerRegistered = false;
   self._networkFailsafeShutdown = false;
   self._limiter = ClockLimiter();

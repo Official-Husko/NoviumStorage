@@ -12,6 +12,50 @@ require "/HLib/Classes/Item/ItemsTable.lua"
 require "/DigitalClasses/ItemsDrivesStorage.lua"
 
 local clientself = {};
+StorageInteractions = {};
+
+local function SortByNameFlat(a,b)
+  return (a.DisplayNameLower or string.lower(a.DisplayName)) < (b.DisplayNameLower or string.lower(b.DisplayName));
+end
+
+local function RebuildCaches()
+  local items = StorageInteractions.GetItemList();
+  if not items then
+    clientself._cachedIndexed = {};
+    clientself._cachedFlatItems = {};
+    return;
+  end
+  local indexed = items:GetIndexed();
+  clientself._cachedIndexed = indexed;
+  local flat = {};
+  local chunk = 0;
+  for _, itemsTable in pairs(indexed) do
+    for i = 1, #itemsTable do
+      flat[#flat + 1] = itemsTable[i];
+      chunk = chunk + 1;
+      if chunk >= clientself._cacheBuildChunk then
+        chunk = 0;
+        coroutine.yield();
+      end
+    end
+  end
+  table.sort(flat, SortByNameFlat);
+  clientself._cachedFlatItems = flat;
+end
+
+function QueueCacheRebuild()
+  if clientself._cacheRebuildScheduled then
+    return;
+  end
+  if not clientself._clientTasks then
+    return;
+  end
+  clientself._cacheRebuildScheduled = true;
+  clientself._clientTasks:AddTask(Task(coroutine.create(function ()
+    RebuildCaches();
+    clientself._cacheRebuildScheduled = false;
+  end)));
+end
 
 function UpdateBroadcastToListeners(item,reason)
   local itemcpy = ItemWrapper.CopyItem(item);
@@ -28,6 +72,7 @@ function UpdateBroadcastToListeners(item,reason)
       clientself._listeners[entityId] = false;
     end
   end
+  QueueCacheRebuild();
 end
 
 local function TaskPushItem(transmission,item)
@@ -69,14 +114,26 @@ local function TaskGetNetworkState(transmission, sinceSaveId)
   local response = {SaveId = clientself._networkSaveId};
   local deltaAvailable = sinceSaveId and sinceSaveId >= clientself._networkChangeLogMin and sinceSaveId <= clientself._networkSaveId;
   if not deltaAvailable then
-    response.Items = StorageInteractions.GetItemList():GetIndexed();
-    response.Patterns = StorageInteractions.GetPatternListIndexed();
+    if not clientself._cachedIndexed or not clientself._cachedFlatItems then
+      QueueCacheRebuild();
+      response.Pending = true;
+    else
+      response.Items = clientself._cachedIndexed;
+      response.FlatItems = clientself._cachedFlatItems;
+      response.Patterns = StorageInteractions.GetPatternListIndexed();
+    end
   else
     local changes = {};
+    local chunk = 0;
     for i = 1, #clientself._networkChangeLog do
       local entry = clientself._networkChangeLog[i];
       if entry.SaveId > sinceSaveId then
         changes[#changes + 1] = {SaveId = entry.SaveId; Item = ItemWrapper.CopyItem(entry.Item)};
+      end
+      chunk = chunk + 1;
+      if chunk >= clientself._deltaChunk then
+        chunk = 0;
+        coroutine.yield();
       end
     end
     response.Changes = changes;
@@ -154,6 +211,12 @@ function clientInit()
   clientself._networkChangeLog = {};
   clientself._networkChangeLogMin = 0;
   clientself._networkChangeLogMax = 256;
+  clientself._cachedIndexed = nil;
+  clientself._cachedFlatItems = nil;
+  clientself._cacheRebuildScheduled = false;
+  clientself._cacheBuildChunk = 64;
+  clientself._deltaChunk = 128;
+  QueueCacheRebuild();
 end
 
 --#endregion
