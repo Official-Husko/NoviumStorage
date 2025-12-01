@@ -6,21 +6,78 @@ require "/HLib/Classes/Other/ClockLimiter.lua"
 require "/HLib/Classes/Data/BitMap.lua"
 require "/HLib/Classes/Item/Item.lua"
 require "/HLib/Classes/Item/ItemWrapper.lua"
+require "/HLib/Classes/Item/ItemsTable.lua"
 
 require "/DigitalScripts/DigitalStoragePeripheral.lua"
 
+local function EnsureListener()
+  if not self._listenerRegistered and DigitalNetworkHasOneController() then
+    DigitalNetworkRegisterListener();
+    self._listenerRegistered = true;
+  end
+end
+
+local function ApplyPendingDeltas()
+  if not self._cachedItems or not self._pendingDeltas then
+    return;
+  end
+  for i=1,#self._pendingDeltas do
+    self._cachedItems:Add(ItemWrapper.CopyItem(self._pendingDeltas[i].Item));
+    self._cacheSaveId = (self._pendingDeltas[i].SaveId or (self._cacheSaveId + 1));
+  end
+  self._pendingDeltas = {};
+end
+
+local function BuildCache()
+  local state = DigitalNetworkObtainNetworkState(self._cacheSaveId);
+  if not state then
+    return;
+  end
+
+  if not self._cachedItems then
+    self._cachedItems = ItemsTable(true);
+  end
+
+  if state.Items then
+    self._cachedItems = ItemsTable(true);
+    for _, itemsTable in pairs(state.Items) do
+      for i = 1, #itemsTable do
+        self._cachedItems:Add(ItemWrapper.CopyItem(itemsTable[i]));
+      end
+    end
+    self._cachedPatterns = state.Patterns or {};
+  end
+
+  if state.Changes then
+    for i = 1, #state.Changes do
+      self._cachedItems:Add(ItemWrapper.CopyItem(state.Changes[i].Item));
+    end
+  end
+
+  self._cacheSaveId = state.SaveId or self._cacheSaveId;
+  self._cacheBuilt = true;
+  ApplyPendingDeltas();
+end
+
 local function GetNetworkData()
   local data = {};
+  EnsureListener();
+  if not self._cacheBuilt then
+    BuildCache();
+  end
+
   if DigitalNetworkHasOneController() then
-    data.Items = DigitalNetworkObtainNetworkItemList():GetIndexed() or {};
-    data.Patterns = DigitalNetworkObtainNetworkPatternListIndexed() or {};
+    data.Items = self._cachedItems:GetIndexed() or {};
+    data.Patterns = self._cachedPatterns;
+    data.SaveId = self._cacheSaveId;
+    data.Cached = true;
   end
   self._responses = {};
   self._responses[1] = {Task = "LoadNetworkData"; Data = data};
-  DigitalNetworkRegisterListener(); -- NOTE this has to be here to avoid sync problems
 end
 
 function update(dt)
+  EnsureListener();
   if not DigitalNetworkHasOneController() then
     script.setUpdateDelta(0);
     return;
@@ -51,8 +108,18 @@ function SpawnItem(item)
   end
 end
 
-function DigitalNetworkItemsListener(item,type)
-  self._responses[#self._responses + 1] = {Task = "UpdateItemCount"; Data = item,Type = type};
+function DigitalNetworkItemsListener(item,type,saveId)
+  local deltaSaveId = saveId or (self._cacheSaveId + 1);
+  if not self._cachedItems then
+    self._pendingDeltas[#self._pendingDeltas + 1] = {Item = item, Type = type, SaveId = deltaSaveId};
+    self._cacheSaveId = deltaSaveId;
+  else
+    self._cachedItems:Add(ItemWrapper.CopyItem(item));
+    self._cacheSaveId = deltaSaveId;
+  end
+  if self._interactingPlayer then
+    self._responses[#self._responses + 1] = {Task = "UpdateItemCount"; Data = item,Type = type, SaveId = deltaSaveId};
+  end
 end
 
 function PullNetworkItem(data)
@@ -82,6 +149,12 @@ function IsTerminalWorking()
 end
 
 function init()
+  self._cacheBuilt = false;
+  self._cachedItems = nil;
+  self._cachedPatterns = {};
+  self._pendingDeltas = {};
+  self._cacheSaveId = storage._cacheSaveId or 0;
+  self._listenerRegistered = false;
   self._networkFailsafeShutdown = false;
   self._limiter = ClockLimiter();
   self._tasksManager = TaskManager(self._limiter, function() animator.setAnimationState("digitalstorage_terminalState", "off"); uninit(); end);
@@ -98,7 +171,7 @@ function init()
     self._responses = {};
     return tmp;
   end);
-  Messenger().RegisterMessage("SetInteractingPlayer", function (_, _, playerId) self._interactingPlayer = playerId; if not playerId then DigitalNetworkUnregisterListener(); end end);
+  Messenger().RegisterMessage("SetInteractingPlayer", function (_, _, playerId) self._interactingPlayer = playerId; end);
   Messenger().RegisterMessage("IsTerminalActive", IsTerminalWorking);
   self._responses = {};
   -- self._transmission = Transmission(TransmissionMessageProcess,"DigitalStoragePeripheralTransmission");
@@ -131,4 +204,9 @@ end
 
 function DigitalNetworkFailsafeShutdown()
   DigitalNetworkFailsafeShutdownDevice();
+end
+
+function uninit()
+  storage._cacheSaveId = self._cacheSaveId;
+  DigitalNetworkUnregisterListener();
 end

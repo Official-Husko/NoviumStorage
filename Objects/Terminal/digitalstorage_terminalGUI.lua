@@ -169,6 +169,26 @@ local function UpdateItemCount(data,type)
   end
 end
 
+local function ApplyDeltaList(deltas, incomingSaveId)
+  if not deltas then
+    return;
+  end
+  for i = 1, #deltas do
+    local delta = deltas[i];
+    local item = delta.Item or delta;
+    UpdateItemCount(item, delta);
+    if delta.SaveId then
+      self._remoteSaveId = math.max(self._remoteSaveId, delta.SaveId);
+    end
+    if self._limiter:Check() then
+      coroutine.yield();
+    end
+  end
+  if incomingSaveId then
+    self._remoteSaveId = math.max(self._remoteSaveId, incomingSaveId);
+  end
+end
+
 function ScanForNewBlueprints()
   widget.setVisible("network.scan", false);
   widget.setVisible("network.scanning", true);
@@ -205,9 +225,19 @@ local function GetResponses()
       if response.Task == "LoadNetworkData" then
         self._ProcessNetworkItemsPatternsQueued = true;
         addedInitTable = true;
-        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItemsPatterns), response.Data.Items, response.Data.Patterns));
+        self._remoteSaveId = response.Data.SaveId or 0;
+        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItemsPatterns), response.Data.Items or {}, response.Data.Patterns or {}));
+      elseif response.Task == "LoadNetworkDelta" then
+        local incomingSaveId = response.Data.SaveId or 0;
+        if incomingSaveId == 0 or incomingSaveId > self._remoteSaveId then
+          self._listTasks:AddTask(Task(coroutine.create(ApplyDeltaList), response.Data.Changes or {}, incomingSaveId));
+        end
       elseif response.Task == "UpdateItemCount" then
-        if self._ProcessNetworkItemsPatternsQueued and not addedInitTable then
+        local incomingSaveId = response.SaveId or 0;
+        if incomingSaveId ~= 0 and incomingSaveId <= self._remoteSaveId then
+          -- already applied or stale
+        elseif self._ProcessNetworkItemsPatternsQueued and not addedInitTable then
+          self._remoteSaveId = math.max(self._remoteSaveId, incomingSaveId);
           self._listTasks:AddTask(Task(coroutine.create(UpdateItemCount), response.Data, response.Type));
         end
       elseif response.Task == "TerminalActive" then
@@ -259,6 +289,7 @@ function init()
   self._limiter = ClockLimiter(1/100);
   self._filter = Filter("network.filter");
   self._textFilter = TextFilter("");
+  self._remoteSaveId = 0;
 
   --  self._networkData = IndexedTable(function(x) return x.Item.UniqueIndex; end, CompareItemPatternToItem);
   self._networkItems = ItemsTable(true);

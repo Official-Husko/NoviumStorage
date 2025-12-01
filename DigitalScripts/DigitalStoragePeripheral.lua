@@ -56,6 +56,10 @@ function DigitalNetworkObtainNetworkItemList()
   return world.callScriptedEntity(DigitalNetworkGetSingleController(), "GetNetworkItems");
 end
 
+function DigitalNetworkObtainNetworkState(lastSaveId)
+  return CallControllerAndWaitForResponse("GetNetworkState", lastSaveId);
+end
+
 
 
 function DigitalNetworkObtainNetworkPatternListIndexed()
