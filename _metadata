@@ -3,7 +3,7 @@
   "author" : "Official Husko",
   "requires" : ["HLib"],
   "description" : "Continuation of Digital Storage mod by Novium. This fork improves the performance and stability of the original mod, while adding new features and enhancements to enhance the user experience.",
-  "name" : "Novium Digital Storage",
+  "name" : "NoviumDigitalStorage",
   "friendlyName" : "Novium Digital Storage",
   "steamContentId" : "",
   "link" : ""
