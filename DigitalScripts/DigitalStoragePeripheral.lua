@@ -56,18 +56,18 @@ function DigitalNetworkObtainNetworkItemList()
   return world.callScriptedEntity(DigitalNetworkGetSingleController(), "GetNetworkItems");
 end
 
-function DigitalNetworkObtainNetworkState(lastSaveId)
-  return CallControllerAndWaitForResponse("GetNetworkState", lastSaveId);
-end
-
 
 
 function DigitalNetworkObtainNetworkPatternListIndexed()
   return CallControllerAndWaitForResponse("GetPatternsIndexed");
 end
 
-local function DigitalNetworkItemInteractions(call,item)
-  local itemproc = CallControllerAndWaitForResponse(call,item);
+function DigitalNetworkObtainCraftableList(lastChangeId)
+  return CallControllerAndWaitForResponse("GetCraftableList", lastChangeId or 0);
+end
+
+local function DigitalNetworkItemInteractions(call,item, ...)
+  local itemproc = CallControllerAndWaitForResponse(call,item, ...);
   return itemproc;
 end
 function DigitalNetworkPushItem(item)
@@ -106,4 +106,8 @@ end
 
 function DigitalNetworkItemsListener(items)
   error("Function 'DigitalNetworkItemsListener(items)' has to be overriden.");
+end
+
+function DigitalNetworkCraftUpgradeItem(recipe, amount, upgradeItem)
+  return DigitalNetworkItemInteractions("CraftUpgradeItem", recipe, amount, upgradeItem);
 end

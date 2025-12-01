@@ -119,8 +119,8 @@ local function Export(filters)
                     countToExport = notMoreThan;
                   end
 
-                  if ItemWrapper.GetItemCount(tmpitm) < countToExport then
-                    countToExport = ItemWrapper.GetItemCount(tmpitm);
+                  if (ItemWrapper.GetItemCount(tmpitm) - additionalSettings.LeaveCount) < countToExport then
+                    countToExport = math.min(0, ItemWrapper.GetItemCount(tmpitm) - additionalSettings.LeaveCount);
                   end
 
                   if additionalSettings.MultipleCount > 1 then
@@ -155,7 +155,7 @@ local function Export(filters)
                   end
                 end
                 if notMoreThan > 0 then
-                  local countToExport = ItemWrapper.GetItemCount(item);
+                  local countToExport = ItemWrapper.GetItemCount(item) - additionalSettings.LeaveCount;
                   if notMoreThan < countToExport then
                     countToExport = notMoreThan;
                   end

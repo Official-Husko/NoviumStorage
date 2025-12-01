@@ -72,27 +72,32 @@ function ItemsDrivesStorage:GetItemsFromDrive(rackId,slotId)
   return self._drives[rackId][slotId].Items;
 end
 
-function ItemsDrivesStorage:GetStoragesContainingItem(item)
+function ItemsDrivesStorage:GetStoragesContainingItem(item, match)
+  match = (match ~= nil and not match and function(x,y) return ItemWrapper.Compare(x,y,false) end) or nil
   local storagesWithItem = {};
+  local totalCount = 0
   for rackId, drives in pairs(self._drives) do
     for slotId, drive in pairs(drives) do
-      local index = drive.Items:FindFlattened(item);
+      local index = drive.Items:FindFlattened(item, match);
       if index then
+        local count = ItemWrapper.GetItemCount(drive.Items:GetFlattened()[index])
         storagesWithItem[#storagesWithItem + 1] =
         {
           Index = slotId;
           Entity = rackId;
           Priority = drive.Priority;
-          Count = ItemWrapper.GetItemCount(drive.Items:GetFlattened()[index]);
+          Count = count;
         };
+        totalCount = totalCount + count
       end
     end
   end
-  return storagesWithItem;
+  return storagesWithItem, totalCount;
 end
 
 function ItemsDrivesStorage:GetStoragesForItem(item)
   local storagesForItem = {};
+  local totalCount = 0;
   for priority, storages in pairs(self._priorityOrderedDrives) do
     for id, storage in pairs(storages) do
       if (storage.CapacityMax > storage.Items:GetItemsCount()) and (storage.TypesMax > storage.Items:GetItemsTypes()) and storage.Filter:IsItemAllowed(item) then
@@ -101,6 +106,7 @@ function ItemsDrivesStorage:GetStoragesForItem(item)
           for _, itemInSt in pairs(storage.Items[item.UniqueIndex]) do
             if ItemWrapper.Compare(item, itemInSt) then
               count = ItemWrapper.GetItemCount(itemInSt);
+              totalCount = totalCount + count
               break;
             end
           end
@@ -109,5 +115,5 @@ function ItemsDrivesStorage:GetStoragesForItem(item)
       end
     end
   end
-  return storagesForItem;
+  return storagesForItem, totalCount;
 end

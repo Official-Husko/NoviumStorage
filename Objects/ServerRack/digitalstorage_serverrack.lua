@@ -145,12 +145,12 @@ function PushItem(...)
   end
 end
 
-local function PullItemInternal(index,key,item)
+local function PullItemInternal(index,key,item,match)
   if not self._drives[index].Drive:ValidateMutex(key) then
     error("Invalid mutex provided");
   end
 
-  local result = self._drives[index].Drive:RemoveItem(item);
+  local result = self._drives[index].Drive:RemoveItem(item,match);
   return result;
 end
 

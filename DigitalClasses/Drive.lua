@@ -78,17 +78,21 @@ function Drive:AddItem(item)
   return returnItem;
 end
 
-function Drive:RemoveItem(item)
+function Drive:RemoveItem(item, match)
+  local comparer = nil
+  if match ~= nil and not match then
+    comparer = function(x,y) return ItemWrapper.Compare(x,y,false) end
+  end
   local result = ItemWrapper.CopyItem(item);
   ItemWrapper.SetItemCount(result,0)
-  local slot = self._driveItemsWorktable:FindFlattened(item);
+  local slot = self._driveItemsWorktable:FindFlattened(item, comparer);
   if not slot then
     return result;
   end
-  result = self._driveItemsWorktable:Remove(item);
+  result = self._driveItemsWorktable:Remove(item, comparer);
   local tmpitem = ItemWrapper.CopyItem(item);
   if result then
-    ItemWrapper.SetItemCount(tmpitem,  ItemWrapper.GetItemCount(result));
+    tmpitem = ItemWrapper.CopyItem(result);
   end
   self._driveChanges[#self._driveChanges + 1] = {Mode = 2; Item = tmpitem};
   return result;

@@ -11,6 +11,27 @@ local coreself = {};
 
 StorageInteractions = {};
 
+local _changeLogLimit = 2000;
+
+local function RecordChange(item, action)
+  if action == "None" then
+    return nil;
+  end
+  coreself._currentChangeId = coreself._currentChangeId + 1;
+  storage.currentChangeId = coreself._currentChangeId;
+  local change = {
+    Item = ItemWrapper.CopyItem(item);
+    Action = action;
+    ChangeId = coreself._currentChangeId
+  };
+  coreself._changeLog[#coreself._changeLog + 1] = change;
+  if #coreself._changeLog > _changeLogLimit then
+    table.remove(coreself._changeLog, 1);
+  end
+  UpdateBroadcastToListeners(change.Item, change.Action, change.ChangeId);
+  return change;
+end
+
 function SortAsc(t, a, b)
   if t[a].Priority ~= t[b].Priority then
     return t[a].Priority < t[b].Priority;
@@ -76,19 +97,23 @@ function StorageInteractions.AddItem(item)
   local tmpitem = ItemWrapper.CopyItem(item);
   ItemWrapper.ModifyItemCount(tmpitem,-ItemWrapper.GetItemCount(itemToPush));
   local result = coreself._allItems:Add(tmpitem);
-  UpdateBroadcastToListeners(tmpitem,result);
+  coreself._craftableItems:Add(tmpitem);
+  RecordChange(tmpitem, result);
   return itemToPush;
 end
 
-function StorageInteractions.RemoveItem(item)
+function StorageInteractions.RemoveItem(item, match)
   local itemToPull = ItemWrapper.CopyItem(item);
 
-  local storagesWithItem = coreself._networkStorages:GetStoragesContainingItem(itemToPull);
+  local storagesWithItem = coreself._networkStorages:GetStoragesContainingItem(itemToPull, match);
+  local removed = {}
   for _, storageData in spairs(storagesWithItem, SortAsc) do
     local mutexKey = GetMutexKey(storageData.Entity,storageData.Index);
     if mutexKey ~= false then
-      local result = world.callScriptedEntity(storageData.Entity,"PullItem",storageData.Index,mutexKey,itemToPull);
-      if ItemWrapper.GetItemCount(result) ~= 0 then
+      local result = world.callScriptedEntity(storageData.Entity,"PullItem",storageData.Index,mutexKey,itemToPull,match);
+      local pulledCount = ItemWrapper.GetItemCount(result)
+      if pulledCount ~= 0 then
+        removed[#removed+1] = result
         world.callScriptedEntity(storageData.Entity,"SaveChanges",storageData.Index,mutexKey);
         -- ItemWrapper.SetItemCount(tmpitem,ItemWrapper.GetItemCount(result));
         -- coreself._networkStorages:RemoveItemFromDrive(storageData.Entity, storageData.Index, tmpitem);
@@ -96,7 +121,7 @@ function StorageInteractions.RemoveItem(item)
         world.callScriptedEntity(storageData.Entity,"CancelChanges",storageData.Index,mutexKey);
       end
       world.callScriptedEntity(storageData.Entity,"FreeMutex",storageData.Index,mutexKey);
-      ItemWrapper.ModifyItemCount(itemToPull,-ItemWrapper.GetItemCount(result));
+      ItemWrapper.ModifyItemCount(itemToPull,-pulledCount);
       if ItemWrapper.GetItemCount(itemToPull) == 0 then
         break;
       end
@@ -107,14 +132,35 @@ function StorageInteractions.RemoveItem(item)
   end
   local tmpitem = ItemWrapper.CopyItem(item);             --NOTE this needs to be reworked
   ItemWrapper.ModifyItemCount(tmpitem,-ItemWrapper.GetItemCount(itemToPull));
-  local _,result = coreself._allItems:Remove(tmpitem);
-  ItemWrapper.SetItemCount(tmpitem,-ItemWrapper.GetItemCount(tmpitem)); --Make item count negative to broadcast
-  UpdateBroadcastToListeners(tmpitem,result);
-  ItemWrapper.SetItemCount(tmpitem,-ItemWrapper.GetItemCount(tmpitem)); --Make item count positive to return
+  for i=1, #removed do
+    local removedItem = removed[i]
+    local _,result = coreself._allItems:Remove(removedItem);
+    coreself._craftableItems:Remove(removedItem)
+    RecordChange(removedItem, result);
+  end
   return tmpitem;
 end
 function StorageInteractions.GetItemList()
   return coreself._allItems;
+end
+function StorageInteractions.GetCraftableList()
+  return coreself._craftableItems;
+end
+
+function StorageInteractions.GetCraftableDelta(lastId)
+  local current = coreself._currentChangeId;
+  local result = {CurrentId = current; Changes = {}};
+  if not lastId or lastId == 0 or (current - lastId) > #coreself._changeLog then
+    result.Snapshot = table.deepcopy(coreself._craftableItems:GetFlattened());
+    return result;
+  end
+  for i=1, #coreself._changeLog do
+    local change = coreself._changeLog[i];
+    if change.ChangeId > lastId then
+      result.Changes[#result.Changes + 1] = change;
+    end
+  end
+  return result;
 end
 
 function StorageInteractions.GetPatternListIndexed ()
@@ -125,6 +171,41 @@ function StorageInteractions.GetPatternListFlattened ()
 end
 function DeviceInNetwork(id)
   return coreself._network:DeviceInNetwork(id);
+end
+function LoadCraftables()
+  local providers = root.assetJson("/craftables.config:providers")
+  local provNum = 0
+  local itemNum = 0
+  for prov, items in pairs(providers) do
+    provNum = provNum + 1
+    itemNum = itemNum + #items
+  end
+  if not storage.craftables or storage.craftables.provNum ~= provNum or storage.craftables.itemNum ~= itemNum then
+    local craftables = {}
+    local craftablesIndex = {}
+    for provider, items in pairs(providers) do
+      for _,itemName in ipairs(items) do
+        if craftablesIndex[itemName] == nil then
+          local recipes = root.recipesForItem(itemName)
+          if recipes and #recipes > 0 then
+            local item = {name = itemName; groups = {}}
+            for _, recipe in ipairs(recipes) do
+              for _, group in ipairs(recipe.groups) do
+              item.groups[group] = true
+              end
+            end
+            craftables[#craftables + 1] = item
+          end
+          craftablesIndex[itemName] = true
+        end
+        if self._limiter:Check() then
+          coroutine.yield();
+        end
+      end
+    end
+    storage.craftables = {items = craftables; provNum = provNum; itemNum = itemNum}
+  end
+  return storage.craftables.items
 end
 
 
@@ -156,7 +237,8 @@ function AddNetworkStorage(storage,index,drivedata)
   local items = drivedata.Items:GetFlattened();
   for i=1,#items do
     local result = coreself._allItems:Add(items[i]);
-    UpdateBroadcastToListeners(items[i],result);
+    coreself._craftableItems:Add(items[i]);
+    RecordChange(items[i], result);
   end
 end
 
@@ -169,8 +251,8 @@ function RemoveNetworkStorage(storage,index)
   for i=1,#driveItems do
     local workItem = ItemWrapper.CopyItem(driveItems[i]);
     local _,result = coreself._allItems:Remove(workItem);
-    ItemWrapper.SetItemCount(workItem,-ItemWrapper.GetItemCount(workItem));
-    UpdateBroadcastToListeners(workItem,result);
+    coreself._craftableItems:Remove(workItem)
+    RecordChange(workItem, result);
   end
 end
 
@@ -240,16 +322,35 @@ function update()
   end
 end
 
+local function InitCraftables()
+  local craftables = LoadCraftables()
+  self._limiter:SetLimit(1/40)
+  local flatData = coreself._craftableItems:GetFlattened()
+  for _, craftable in ipairs(craftables) do
+    local item = Item({name = craftable.name; count = 0; parameters = {}})
+    local _, index = coreself._craftableItems:Add(item)
+    flatData[index.Flattened].Groups = copy(craftable.groups)
+    if self._limiter:Check() then
+      coroutine.yield();
+    end
+  end
+  self._craftablesInit = true
+  self._limiter:SetLimit()
+end
+
 function init()
   coreself = {};
   coreself._allItems = ItemsTable(true);
+  coreself._craftableItems = ItemsTable(true);
+  coreself._changeLog = {};
+  coreself._currentChangeId = storage.currentChangeId or 0;
 
   coreself._networkRefreshCount = 0;
   self._limiter = ClockLimiter();
   self._entityId = entity.id();
   self._singleController = true;
   self._controllerTasks = TaskManager(self._limiter,function() animator.setAnimationState("digitalstorage_controllerState", "failure"); NetworkShutdown(); end);
-  coreself._patterns = PatternsStorage();
+  --coreself._patterns = PatternsStorage();
 
   clientInit();
 
@@ -257,12 +358,14 @@ function init()
   coreself._network = DigitalNetwork();
   self._controllerTasks:AddTaskOperator("CoreTasks", "Table");
   coreself._coreTasks = self._controllerTasks:GetTaskOperator("CoreTasks");
+  coreself._coreTasks:AddTask(Task(coroutine.create(InitCraftables)));
 
   coreself._networkStorages = ItemsDrivesStorage();
 
   local forcedDelay = os.clock();
   local tmpUpdate = update;
-  script.setUpdateDelta(20);
+  --script.setUpdateDelta(20);
+  script.setUpdateDelta(1);
   update = function ()
     if (os.clock() - forcedDelay) < 3 then
       return;

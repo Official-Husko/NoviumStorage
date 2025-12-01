@@ -237,6 +237,7 @@ local function SetAdditionalSettingsForMode(selected)
     SetUpToCount(selected.AdditionalData.UpToCount);
     SetExportMode(selected.AdditionalData.UpToMode);
     SetMultipleCount(selected.AdditionalData.MultipleCount);
+    SetLeaveCount(selected.AdditionalData.LeaveCount);
   elseif selected.Mode == "Import" then
     SetLeaveCount(selected.AdditionalData.LeaveCount);
   end
@@ -277,13 +278,23 @@ end
 --#region Additional Settings
 
 function SetLeaveCount(count)
-  widget.setText("tabs.tabs.config.additionalDetails.import.leave_count", count);
+  count = count or 0
+  if self._filterModeChange == "Import" then
+    widget.setText("tabs.tabs.config.additionalDetails.import.leave_count", count);
+  else
+    widget.setText("tabs.tabs.config.additionalDetails.export.leave_count", count);
+  end
   local selected = self.FiltersList:GetSelected();
   selected.AdditionalData.LeaveCount = count;
   SaveData();
 end
 function  leave_count ()
-  local number = widget.getText("tabs.tabs.config.additionalDetails.import.leave_count");
+  local number = 0
+  if self._filterModeChange == "Import" then
+    number = widget.getText("tabs.tabs.config.additionalDetails.import.leave_count");
+  else
+    number = widget.getText("tabs.tabs.config.additionalDetails.export.leave_count");
+  end
   if number and number ~= "" then
     number = tonumber(number);
     if self.FiltersList:GetSelected().AdditionalData.LeaveCount ~= number then
@@ -352,10 +363,9 @@ local function SetDefaultAdditionalSettingsForMode(mode)
     SetUpToCount(selected.AdditionalData.UpToCount);
     SetExportMode(selected.AdditionalData.UpToMode);
     SetMultipleCount(selected.AdditionalData.MultipleCount);
-  elseif mode == "Import" then
-    selected.AdditionalData.LeaveCount = 0;
-    SetLeaveCount(selected.AdditionalData.LeaveCount);
   end
+  selected.AdditionalData.LeaveCount = 0;
+  SetLeaveCount(selected.AdditionalData.LeaveCount);
 end
 
 function SetFilterModeChange(stat)

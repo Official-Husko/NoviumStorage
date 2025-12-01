@@ -10,106 +10,77 @@ require "/HLib/Classes/Item/ItemsTable.lua"
 
 require "/DigitalScripts/DigitalStoragePeripheral.lua"
 
-local function EnsureListener()
-  if not self._listenerRegistered and DigitalNetworkHasOneController() then
-    DigitalNetworkRegisterListener();
-    self._listenerRegistered = true;
+local _pageSize = 200;
+
+local function ApplyChangeToTable(tbl, item, action)
+  if not tbl then
+    return;
+  end
+  if action == "Added" or action == "Modified" then
+    tbl:Add(item);
+  elseif action == "Removed" then
+    tbl:Remove(item);
   end
 end
 
-local function ApplyPendingDeltas()
-  if not self._cachedItems or not self._pendingDeltas then
-    return;
-  end
-  for i=1,#self._pendingDeltas do
-    self._cachedItems:Add(ItemWrapper.CopyItem(self._pendingDeltas[i].Item));
-    self._cacheSaveId = (self._pendingDeltas[i].SaveId or (self._cacheSaveId + 1));
-  end
-  self._pendingDeltas = {};
-end
-
-local function RebuildLocalCaches()
-  if not self._cachedItems then
-    return;
-  end
-  self._cachedIndexed = self._cachedItems:GetIndexed();
-  local flat = self._cachedItems:GetFlattened();
-  table.sort(flat, function(a,b) return (a.DisplayNameLower or string.lower(a.DisplayName)) < (b.DisplayNameLower or string.lower(b.DisplayName)); end);
-  self._cachedFlat = flat;
-end
-
-local function QueueLocalCacheRebuild()
-  if self._cacheRebuildScheduled then
-    return;
-  end
-  self._cacheRebuildScheduled = true;
-  self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(function ()
-    RebuildLocalCaches();
-    self._cacheRebuildScheduled = false;
-  end)));
-end
-
-local function BuildCache()
-  local state = DigitalNetworkObtainNetworkState(self._cacheSaveId);
-  if not state then
-    return;
-  end
-  if state.Pending then
-    self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(BuildCache)), nil, "BuildCacheRetry");
-    script.setUpdateDelta(1);
-    return;
-  end
-
-  if not self._cachedItems then
-    self._cachedItems = ItemsTable(true);
-  end
-
-  if state.Items then
-    self._cachedItems = ItemsTable(true);
-    for _, itemsTable in pairs(state.Items) do
-      for i = 1, #itemsTable do
-        self._cachedItems:Add(ItemWrapper.CopyItem(itemsTable[i]));
-      end
-    end
-    self._cachedPatterns = state.Patterns or {};
-    self._cachedIndexed = state.Items;
-    self._cachedFlat = state.FlatItems;
-  end
-
-  if state.Changes then
-    for i = 1, #state.Changes do
-      self._cachedItems:Add(ItemWrapper.CopyItem(state.Changes[i].Item));
-    end
-  end
-
-  self._cacheSaveId = state.SaveId or self._cacheSaveId;
-  self._cacheBuilt = true;
-  ApplyPendingDeltas();
-  if not self._cachedFlat or not self._cachedIndexed then
-    QueueLocalCacheRebuild();
+local function AppendChange(change)
+  self._changeLog = self._changeLog or {};
+  self._changeLog[#self._changeLog + 1] = change;
+  if #self._changeLog > 2000 then
+    table.remove(self._changeLog, 1);
   end
 end
 
 local function GetNetworkData()
-  local data = {};
-  EnsureListener();
-  if not self._cacheBuilt then
-    BuildCache();
+  if not DigitalNetworkHasOneController() then
+    return;
   end
-
-  if DigitalNetworkHasOneController() then
-    data.Items = self._cachedIndexed or (self._cachedItems and self._cachedItems:GetIndexed()) or {};
-    data.FlatItems = self._cachedFlat;
-    data.Patterns = self._cachedPatterns;
-    data.SaveId = self._cacheSaveId;
-    data.Cached = true;
+  DigitalNetworkRegisterListener(); -- NOTE this has to be here to avoid sync problems
+  if not self._cachedItems then
+    local resp = DigitalNetworkObtainCraftableList(self._currentChangeId or 0);
+    self._currentChangeId = resp.CurrentId or 0;
+    self._cachedItems = ItemsTable(true);
+    self._changeLog = {};
+    if resp.Snapshot then
+      for _, item in ipairs(resp.Snapshot) do
+        self._cachedItems:Add(Item(item, true));
+      end
+    end
+    if resp.Changes then
+      for i=1, #resp.Changes do
+        local ch = resp.Changes[i];
+        ApplyChangeToTable(self._cachedItems, ch.Item, ch.Action);
+        AppendChange(ch);
+      end
+    end
   end
+  local flattened = self._cachedItems:GetFlattened();
+  local total = #flattened;
+  local idx = 1;
   self._responses = {};
-  self._responses[1] = {Task = "LoadNetworkData"; Data = data};
+  while idx <= total do
+    local chunk = {};
+    local limit = math.min(idx + _pageSize - 1, total);
+    for i = idx, limit do
+      chunk[#chunk + 1] = flattened[i];
+    end
+    self._responses[#self._responses + 1] = {Task = "LoadNetworkData"; Data = chunk; CurrentId = self._currentChangeId; IsFinal = (limit == total)};
+    idx = limit + 1;
+  end
+  if self._lastClientChangeId then
+    local changes = {};
+    for i=1, #self._changeLog do
+      if self._changeLog[i].ChangeId > self._lastClientChangeId then
+        changes[#changes + 1] = self._changeLog[i];
+      end
+    end
+    if #changes > 0 then
+      self._responses[#self._responses + 1] = {Task = "ApplyDeltas"; Changes = changes; CurrentId = self._currentChangeId};
+    end
+  end
 end
 
 function update(dt)
-  EnsureListener();
   if not DigitalNetworkHasOneController() then
     script.setUpdateDelta(0);
     return;
@@ -140,21 +111,12 @@ function SpawnItem(item)
   end
 end
 
-function DigitalNetworkItemsListener(item,type,saveId)
-  local deltaSaveId = saveId or (self._cacheSaveId + 1);
-  if not self._cachedItems then
-    self._pendingDeltas[#self._pendingDeltas + 1] = {Item = item, Type = type, SaveId = deltaSaveId};
-    self._cacheSaveId = deltaSaveId;
-  else
-    self._cachedItems:Add(ItemWrapper.CopyItem(item));
-    self._cacheSaveId = deltaSaveId;
-    self._cachedIndexed = nil;
-    self._cachedFlat = nil;
-    QueueLocalCacheRebuild();
-  end
-  if self._interactingPlayer then
-    self._responses[#self._responses + 1] = {Task = "UpdateItemCount"; Data = item,Type = type, SaveId = deltaSaveId};
-  end
+function DigitalNetworkItemsListener(item,type, changeId)
+  self._currentChangeId = changeId or (self._currentChangeId or 0) + 1;
+  local change = {Item = item; Action = type; ChangeId = self._currentChangeId};
+  ApplyChangeToTable(self._cachedItems, item, type);
+  AppendChange(change);
+  self._responses[#self._responses + 1] = {Task = "ApplyDeltas"; Changes = {change}; CurrentId = self._currentChangeId};
 end
 
 function PullNetworkItem(data)
@@ -171,6 +133,16 @@ function PushNetworkItem(item)
   end
 end
 
+function CraftUpgradeNetworkItem(recipe, amount, upgradeItem)
+  local results = DigitalNetworkCraftUpgradeItem(recipe, amount, upgradeItem);
+  for i=1, #results do
+    local leftover = results[i]
+    if ItemWrapper.GetItemCount(leftover) > 0 then
+      SpawnItem(leftover);
+    end
+  end
+end
+
 function PushNetworkItems()
   local itemsObj = {};
   local items = world.containerTakeAll(self._entityId);
@@ -184,25 +156,16 @@ function IsTerminalWorking()
 end
 
 function init()
-  self._cacheBuilt = false;
-  self._cachedItems = nil;
-  self._cachedPatterns = {};
-  self._pendingDeltas = {};
-  self._cacheSaveId = storage._cacheSaveId or 0;
-  self._cachedIndexed = nil;
-  self._cachedFlat = nil;
-  self._cacheRebuildScheduled = false;
-  self._listenerRegistered = false;
   self._networkFailsafeShutdown = false;
   self._limiter = ClockLimiter();
   self._tasksManager = TaskManager(self._limiter, function() animator.setAnimationState("digitalstorage_terminalState", "off"); uninit(); end);
   self._tasksManager:AddTaskOperator("ItemsNetwork", "Table");
 
-  Messenger().RegisterMessage("GetNetworkData", function () self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(GetNetworkData)), nil, "GetNetworkData"); script.setUpdateDelta(1); end);
+  Messenger().RegisterMessage("GetNetworkData", function (_, _, lastChangeId) self._lastClientChangeId = lastChangeId; self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(GetNetworkData)), nil, "GetNetworkData"); script.setUpdateDelta(1); end);
   -- Messenger().RegisterMessage("GetNetworkPatterns", function () self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(GetNetworkPatterns)), nil, "GetNetworkPatterns"); script.setUpdateDelta(1); end);
   -- Messenger().RegisterMessage("RecieveNetworkItems", function (_, _) return self._networkItems; end);
   Messenger().RegisterMessage("PullNetworkItems", function (_, _, data) self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(PullNetworkItem), data)); script.setUpdateDelta(1); end);
-  -- Messenger().RegisterMessage("CraftNetworkItem", function (_, _, data) self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(CraftNetworkItem), data)); script.setUpdateDelta(1); end);
+  Messenger().RegisterMessage("CraftUpgradeNetworkItem", function (_, _, data, amount, upgradeItem) self._tasksManager:GetTaskOperator("ItemsNetwork"):AddTask(Task(coroutine.create(CraftUpgradeNetworkItem), data, amount, upgradeItem)); script.setUpdateDelta(1); end);
   -- Messenger().RegisterMessage("IsTerminalWorking", IsTerminalWorking);
   Messenger().RegisterMessage("LoadResponses", function (_, _)
     local tmp = self._responses;
@@ -212,6 +175,10 @@ function init()
   Messenger().RegisterMessage("SetInteractingPlayer", function (_, _, playerId) self._interactingPlayer = playerId; end);
   Messenger().RegisterMessage("IsTerminalActive", IsTerminalWorking);
   self._responses = {};
+  self._cachedItems = nil;
+  self._changeLog = {};
+  self._currentChangeId = 0;
+  self._lastClientChangeId = 0;
   -- self._transmission = Transmission(TransmissionMessageProcess,"DigitalStoragePeripheralTransmission");
   self._interactingPlayer = nil;
   self._entityId = entity.id();
@@ -242,9 +209,4 @@ end
 
 function DigitalNetworkFailsafeShutdown()
   DigitalNetworkFailsafeShutdownDevice();
-end
-
-function uninit()
-  storage._cacheSaveId = self._cacheSaveId;
-  DigitalNetworkUnregisterListener();
 end

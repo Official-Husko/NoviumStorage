@@ -4,6 +4,7 @@ require "/HLib/Scripts/tableEx.lua"
 require "/HLib/Scripts/AdditionalFunctions.lua"
 require "/HLib/Classes/GUIElements/ListFlat.lua"
 require "/HLib/Classes/GUIElements/Itemslot.lua"
+require "/HLib/Classes/GUIElements/ListDoubleClick.lua"
 require "/HLib/Classes/Other/LoadData.lua"
 require "/HLib/Classes/Other/ClockLimiter.lua"
 require "/HLib/Classes/Tasks/TaskManager.lua"
@@ -206,6 +207,15 @@ function addItemFilter()
   end
 end
 
+function textDoubleclick()
+  local item = self._textList:GetSelected();
+  if not item then
+    error("DoubleClick on null item error");
+  end
+  widget.setText("tabs.tabs.text.newTextFilter", item);
+  self._textList:RemoveListItem(item)
+  save()
+end
 
 function init()
   UpdateUIVisibility(false);
@@ -226,6 +236,7 @@ function init()
       widget.setText(string.format("%s.filterText", listItem), item);
     end
   );
+  ListDoubleClick("tabs.tabs.text.scrollArea.textList", "doubleclick", textDoubleclick);
   self._filtercardSlot = Itemslot("filterCard");
   self._filtercardSlot:SetFilterFunction(function(item)
     return item.ItemDescriptor.name == "digitalstorage_filtercard";
