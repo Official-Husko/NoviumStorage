@@ -13,11 +13,11 @@ require "/DigitalClasses/ItemsDrivesStorage.lua"
 
 local clientself = {};
 
-function UpdateBroadcastToListeners(item,reason, changeId)
+function UpdateBroadcastToListeners(item,reason)
   local itemcpy = ItemWrapper.CopyItem(item);
   for entityId,_ in pairs(clientself._listeners) do
     if world.entityExists(entityId) and DeviceInNetwork(entityId) then
-      world.callScriptedEntity(entityId, "DigitalNetworkItemsListener",itemcpy,reason, changeId);
+      world.callScriptedEntity(entityId, "DigitalNetworkItemsListener",itemcpy,reason);
     else
       clientself._listeners[entityId] = false;
     end
@@ -106,11 +106,11 @@ local function TaskGetPatternsFlattened(transmission)
 end
 
 
-function TaskGetCraftableList(transmission, lastChangeId)
+function TaskGetCraftableList(transmission)
   while not self._craftablesInit do
     coroutine.yield()
   end
-  local result = StorageInteractions.GetCraftableDelta(lastChangeId);
+  local result = StorageInteractions.GetCraftableList();
   transmission:SendResponse(result);
 end
 
@@ -140,8 +140,8 @@ function GetNetworkItems(transmission)
   return result;
 end
 
-function GetCraftableList(transmission, lastChangeId)
-  LaunchCoreInteractionCall(TaskGetCraftableList,transmission, lastChangeId);
+function GetCraftableList(transmission)
+  LaunchCoreInteractionCall(TaskGetCraftableList,transmission);
 end
 
 function GetPatternsFlattened(transmission)

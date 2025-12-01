@@ -62,8 +62,8 @@ function DigitalNetworkObtainNetworkPatternListIndexed()
   return CallControllerAndWaitForResponse("GetPatternsIndexed");
 end
 
-function DigitalNetworkObtainCraftableList(lastChangeId)
-  return CallControllerAndWaitForResponse("GetCraftableList", lastChangeId or 0);
+function DigitalNetworkObtainCraftableList()
+  return CallControllerAndWaitForResponse("GetCraftableList");
 end
 
 local function DigitalNetworkItemInteractions(call,item, ...)

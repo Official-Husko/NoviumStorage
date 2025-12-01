@@ -136,53 +136,19 @@ local function ProcessItems(items)
   end
 end
 
-local function BeginNetworkLoad()
-  self._networkItems = ItemsTable(true);
-  self._networkList:EmptyList();
-  self._stationList:EmptyList();
-  self._stationItems = {};
-  self._stations = {["plain"] = {needBlueprint = true; count = 1}};
-  self._selectedStation = self._defaultStations[1];
-  self._nextSelectedStation = nil;
-  self._networkDataDisplayed = false;
-end
-
-local function ProcessNetworkChunk(items, isFinal)
+local function ProcessNetworkItems(items)
   self._limiter:SetLimit(1/50)
-  for _,item in ipairs(items) do
-    self._networkItems:Add(item);
-    updateAvailableStations(item)
-    self._networkList:AddListItem(copy(item));
+  ProcessItems(items);
+  self._limiter:SetLimit()
+  refreshStationList()
+  local flatData = self._networkItems:GetFlattened()
+  for _, index in ipairs(self._networkItems:GetSortedIndex()) do
+    self._networkList:AddListItem(copy(flatData[index]));
     if self._limiter:Check() then
       coroutine.yield();
     end
   end
-  self._limiter:SetLimit()
-  if isFinal then
-    refreshStationList()
-    self._networkList:QueueSort();
-    self._networkList:RefreshDisplay();
-    self._networkDataDisplayed = true;
-  end
-end
-
-local function ApplyDelta(change)
-  if not change or not change.Item then
-    return;
-  end
-  if change.Action == "Removed" then
-    self._networkItems:Remove(change.Item, function(x,y) return ItemWrapper.Compare(x,y,false) end)
-  else
-    self._networkItems:Add(change.Item);
-  end
-  updateAvailableStations(change.Item)
-  if not self._networkList:UpdateListItem(change.Item) then
-    if change.Action ~= "Removed" then
-      self._networkList:AddListItem(copy(change.Item));
-    end
-  end
-  self._networkList:RefreshDisplay();
-  self._ingredientList:RefreshDisplay()
+  self._networkDataDisplayed = true;
 end
 --#endregion
 
@@ -280,7 +246,15 @@ local function UpdateItemCount(data,type)
   if not self._networkDataDisplayed then
     error("Network data is not displayed. Invalid order of displaying items");
   end
-  ApplyDelta({Item = data; Action = type});
+  local flatData = self._networkItems:GetFlattened();
+  local _, index, isNew = self._networkItems:Add(data);
+  if updateAvailableStations(data) then
+    refreshStationList()
+  end
+  if not self._networkList:UpdateListItem(data) then
+    self._networkList:AddListItem(data);
+  end
+  self._ingredientList:RefreshDisplay()
 end
 
 function ScanForNewBlueprints()
@@ -307,6 +281,7 @@ function scan()
 end
 
 local function GetResponses()
+  local addedInitTable = false;
   if self._responseLoader:Call() then
     local responses = self._responseLoader:GetData();
     self._responseLoader:Reset();
@@ -316,29 +291,25 @@ local function GetResponses()
     script.setUpdateDelta(1);
     for _, response in pairs(responses) do
       if response.Task == "LoadNetworkData" then
-        if not self._loadingSnapshot then
-          BeginNetworkLoad();
-          self._loadingSnapshot = true;
-        end
-        self._currentChangeId = response.CurrentId or self._currentChangeId;
-        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkChunk), response.Data or {}, response.IsFinal));
-        if response.IsFinal then
-          self._loadingSnapshot = false;
-        end
-      elseif response.Task == "ApplyDeltas" then
-        self._currentChangeId = response.CurrentId or self._currentChangeId;
-        if response.Changes then
-          for i=1, #response.Changes do
-            self._listTasks:AddTask(Task(coroutine.create(ApplyDelta), response.Changes[i]));
-          end
+        self._ProcessNetworkItemsPatternsQueued = true;
+        addedInitTable = true;
+        --self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItemsPatterns), response.Data.Items, response.Data.Craftables));
+        self._listTasks:AddTask(Task(coroutine.create(ProcessNetworkItems), response.Data.Craftables)) --, response.Data.Craftables));
+      elseif response.Task == "UpdateItemCount" then
+        if self._ProcessNetworkItemsPatternsQueued and not addedInitTable then
+          self._listTasks:AddTask(Task(coroutine.create(UpdateItemCount), response.Data, response.Type));
         end
       elseif response.Task == "TerminalActive" then
         if response.Data then
           if not self._terminalInitalized then
             self._terminalInitalized = true;
             Messenger().SendMessageNoResponse(self._parentEntityId, "SetInteractingPlayer", pane.playerEntityId());
-            Messenger().SendMessageNoResponse(self._parentEntityId, "GetNetworkData", self._lastKnownChangeId or 0);
+            Messenger().SendMessageNoResponse(self._parentEntityId, "GetNetworkData");
+          else
+            --NOTE terminal initalized and Active
           end
+        else
+          --NOTE terminal Should Shutdown
         end
       else
         error(ToStringAnything("Invalid Code:", bitmap, response));
@@ -418,10 +389,6 @@ function init()
   self._limiter = ClockLimiter(1/50);
   self._filter = Filter("network.filter");
   self._textFilter = TextFilter("");
-  self._currentChangeId = player.getProperty("digitalstorage_lastChangeId", 0);
-  self._lastKnownChangeId = self._currentChangeId;
-  self._loadingSnapshot = false;
-  self._networkDataDisplayed = false;
   self._craftLevel = {}
   self._selected = nil
   self._lastPattern = {}
@@ -510,7 +477,6 @@ end
 
 function uninit()
   Messenger().SendMessageNoResponse(self._parentEntityId, "SetInteractingPlayer", nil);
-  player.setProperty("digitalstorage_lastChangeId", self._currentChangeId or 0);
 end
 
 function update()

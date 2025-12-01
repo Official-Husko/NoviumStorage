@@ -11,27 +11,6 @@ local coreself = {};
 
 StorageInteractions = {};
 
-local _changeLogLimit = 2000;
-
-local function RecordChange(item, action)
-  if action == "None" then
-    return nil;
-  end
-  coreself._currentChangeId = coreself._currentChangeId + 1;
-  storage.currentChangeId = coreself._currentChangeId;
-  local change = {
-    Item = ItemWrapper.CopyItem(item);
-    Action = action;
-    ChangeId = coreself._currentChangeId
-  };
-  coreself._changeLog[#coreself._changeLog + 1] = change;
-  if #coreself._changeLog > _changeLogLimit then
-    table.remove(coreself._changeLog, 1);
-  end
-  UpdateBroadcastToListeners(change.Item, change.Action, change.ChangeId);
-  return change;
-end
-
 function SortAsc(t, a, b)
   if t[a].Priority ~= t[b].Priority then
     return t[a].Priority < t[b].Priority;
@@ -98,7 +77,7 @@ function StorageInteractions.AddItem(item)
   ItemWrapper.ModifyItemCount(tmpitem,-ItemWrapper.GetItemCount(itemToPush));
   local result = coreself._allItems:Add(tmpitem);
   coreself._craftableItems:Add(tmpitem);
-  RecordChange(tmpitem, result);
+  UpdateBroadcastToListeners(tmpitem,result);
   return itemToPush;
 end
 
@@ -136,7 +115,8 @@ function StorageInteractions.RemoveItem(item, match)
     local removedItem = removed[i]
     local _,result = coreself._allItems:Remove(removedItem);
     coreself._craftableItems:Remove(removedItem)
-    RecordChange(removedItem, result);
+    ItemWrapper.SetItemCount(removedItem,-ItemWrapper.GetItemCount(removedItem)); --Make item count negative to broadcast
+    UpdateBroadcastToListeners(removedItem,result);
   end
   return tmpitem;
 end
@@ -145,22 +125,6 @@ function StorageInteractions.GetItemList()
 end
 function StorageInteractions.GetCraftableList()
   return coreself._craftableItems;
-end
-
-function StorageInteractions.GetCraftableDelta(lastId)
-  local current = coreself._currentChangeId;
-  local result = {CurrentId = current; Changes = {}};
-  if not lastId or lastId == 0 or (current - lastId) > #coreself._changeLog then
-    result.Snapshot = table.deepcopy(coreself._craftableItems:GetFlattened());
-    return result;
-  end
-  for i=1, #coreself._changeLog do
-    local change = coreself._changeLog[i];
-    if change.ChangeId > lastId then
-      result.Changes[#result.Changes + 1] = change;
-    end
-  end
-  return result;
 end
 
 function StorageInteractions.GetPatternListIndexed ()
@@ -238,7 +202,7 @@ function AddNetworkStorage(storage,index,drivedata)
   for i=1,#items do
     local result = coreself._allItems:Add(items[i]);
     coreself._craftableItems:Add(items[i]);
-    RecordChange(items[i], result);
+    UpdateBroadcastToListeners(items[i],result);
   end
 end
 
@@ -252,7 +216,8 @@ function RemoveNetworkStorage(storage,index)
     local workItem = ItemWrapper.CopyItem(driveItems[i]);
     local _,result = coreself._allItems:Remove(workItem);
     coreself._craftableItems:Remove(workItem)
-    RecordChange(workItem, result);
+    ItemWrapper.SetItemCount(workItem,-ItemWrapper.GetItemCount(workItem));
+    UpdateBroadcastToListeners(workItem,result);
   end
 end
 
@@ -342,8 +307,6 @@ function init()
   coreself = {};
   coreself._allItems = ItemsTable(true);
   coreself._craftableItems = ItemsTable(true);
-  coreself._changeLog = {};
-  coreself._currentChangeId = storage.currentChangeId or 0;
 
   coreself._networkRefreshCount = 0;
   self._limiter = ClockLimiter();
